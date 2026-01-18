@@ -74,7 +74,11 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">座號</div><div class="text-2xl font-bold text-gray-800" id="resSeat">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">姓名</div><div class="text-2xl font-bold text-gray-800" id="resName">--</div></div>
-                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white"><div class="text-xs text-blue-100">平均</div><div class="text-3xl font-bold" id="resAvg">--</div></div>
+                    <!-- 修改這裡：將「平均」改為「備註」 -->
+                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white">
+                        <div class="text-xs text-blue-100">備註</div>
+                        <div class="text-3xl font-bold" id="resNote">--</div>
+                    </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">總分</div><div class="text-2xl font-bold text-gray-700" id="resTotal">--</div></div>
                 </div>
                 <div class="bg-white rounded-xl shadow overflow-hidden mb-8 border border-gray-100">
@@ -87,7 +91,7 @@
         </div>
     </div>
 
-    <!-- 3. 管理員匯入面板 (點擊右下角按鈕開啟) -->
+    <!-- 3. 管理員匯入面板 -->
     <div id="adminPanel" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex justify-center items-center backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fade-in-up">
             <button onclick="toggleAdmin(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
@@ -120,7 +124,6 @@
         </div>
     </div>
 
-    <!-- 管理員按鈕 (右下角) -->
     <button onclick="toggleAdmin(true)" class="fixed bottom-4 right-4 bg-gray-800 hover:bg-gray-700 text-white px-5 py-3 rounded-full shadow-lg transition z-40 flex items-center space-x-2 border-2 border-white/20">
         <i class="fa-solid fa-cog animate-spin-slow"></i>
         <span class="font-bold">管理員/教師匯入</span>
@@ -130,7 +133,7 @@
         // ************************************************
         // 請輸入您最新的 GAS 網址
         // ************************************************
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzfoK4onmZTj_fxAGlj2VvnohwQIQlmo4Fbq4_TiKxkppgUEKmxKjJnkeTuD2LG2Ltwg/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz3VPFczXNMCaudJTMNdyyMgfDD3PKSmJhv9xUfTym05RgGiA7Munj7wONXFMBBD0NsMw/exec"; 
 
         // 全域變數
         let sheetList = [];
@@ -258,7 +261,8 @@
             const s = data.student; const stats = data.stats;
             document.getElementById('resSeat').textContent = s.seat;
             document.getElementById('resName').textContent = s.name;
-            document.getElementById('resAvg').textContent = s.avg;
+            // 更新：顯示備註
+            document.getElementById('resNote').textContent = s.note || '--';
             document.getElementById('resTotal').textContent = s.total;
 
             const tbody = document.getElementById('scoreTableBody'); tbody.innerHTML = '';
