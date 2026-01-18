@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生成績查詢系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader {
+            border: 3px solid #e5e7eb; border-top: 3px solid #3b82f6; border-radius: 50%;
+            width: 20px; height: 20px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 隱藏的檔案輸入框 */
+        input[type="file"]::file-selector-button {
+            margin-right: 10px; border: none; background: #3b82f6;
+            padding: 8px 12px; border-radius: 6px; color: #fff; cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-8 px-4 relative">
+
+    <header class="mb-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-wide mb-2 flex items-center justify-center">
+            <i class="fa-solid fa-graduation-cap text-blue-600 mr-2"></i>學生成績查詢
+        </h1>
+    </header>
+
+    <!-- 系統訊息 -->
+    <div id="systemMsg" class="w-full max-w-md mb-4 hidden"></div>
+
+    <!-- 1. 學生登入區 -->
+    <div id="loginPanel" class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100 fade-in">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 text-center">學生登入</h2>
+        <div class="space-y-5">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2 text-sm">身分證字號 (後五碼)</label>
+                <input type="password" id="loginIdInput" maxlength="5" 
+                       class="w-full bg-gray-50 border border-gray-300 text-center text-2xl tracking-[0.5em] rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-3" 
+                       placeholder="•••••">
+            </div>
+            <button onclick="handleLogin()" id="loginBtn" class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-lg px-5 py-3 transition shadow-md flex justify-center items-center">
+                登入系統
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. 查詢儀表板 (登入後顯示) -->
+    <div id="dashboardPanel" class="hidden w-full max-w-5xl fade-in">
+        <div class="bg-white p-4 rounded-xl shadow-md mb-6 flex flex-col md:flex-row items-center justify-between border-l-4 border-blue-500">
+            <div class="flex items-center w-full md:w-auto mb-4 md:mb-0">
+                <div class="bg-blue-100 p-3 rounded-full mr-3 text-blue-600"><i class="fa-solid fa-user-circle text-xl"></i></div>
+                <div>
+                    <p class="text-xs text-gray-500">歡迎回來</p>
+                    <h3 class="text-lg font-bold text-gray-800"><span id="userDisplayName">同學</span></h3>
+                </div>
+            </div>
+            <div class="flex items-center w-full md:w-auto space-x-2">
+                <select id="examSelect" onchange="handleExamChange()" class="w-full bg-blue-50 border border-blue-300 text-gray-900 text-sm rounded-lg p-2.5 font-medium">
+                    <option value="" disabled selected>▼ 請選擇評量成績...</option>
+                </select>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-red-50 px-4 py-2.5 rounded-lg transition text-sm font-medium">
+                    <i class="fa-solid fa-sign-out-alt"></i> 登出
+                </button>
+            </div>
+        </div>
+
+        <!-- 查詢結果區 (省略詳細結構，由JS動態生成，保持與之前一致) -->
+        <div id="resultArea" class="hidden animate-fade-in-up">
+            <div id="resultLoader" class="hidden py-12 text-center"><div class="loader inline-block border-t-blue-600 w-10 h-10 mb-4"></div><p>讀取中...</p></div>
+            <div id="resultContent" class="hidden">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">座號</div><div class="text-2xl font-bold text-gray-800" id="resSeat">--</div></div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">姓名</div><div class="text-2xl font-bold text-gray-800" id="resName">--</div></div>
+                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white"><div class="text-xs text-blue-100">平均</div><div class="text-3xl font-bold" id="resAvg">--</div></div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">總分</div><div class="text-2xl font-bold text-gray-700" id="resTotal">--</div></div>
+                </div>
+                <div class="bg-white rounded-xl shadow overflow-hidden mb-8 border border-gray-100">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left"><thead class="text-xs text-gray-500 uppercase bg-gray-50"><tr><th class="px-6 py-3">科目</th><th class="px-6 py-3 text-center">定期</th><th class="px-6 py-3 text-center">平時</th></tr></thead><tbody id="scoreTableBody"></tbody></table>
+                    </div>
+                </div>
+                <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 管理員匯入面板 (預設隱藏，點擊右下角按鈕開啟) -->
+    <div id="adminPanel" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex justify-center items-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fade-in-up">
+            <button onclick="toggleAdmin(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
+            
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-upload-alt text-blue-600 mr-2"></i>匯入成績資料 (CSV)</h2>
+            
+            <div class="space-y-4">
+                <!-- 密碼 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">管理員密碼</label>
+                    <input type="password" id="adminPwd" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請輸入 Code.gs 設定的密碼">
+                </div>
+
+                <!-- 檔案選擇 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">選擇 CSV 檔案</label>
+                    <input type="file" id="csvFile" accept=".csv" class="w-full text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 focus:outline-none" onchange="previewFileName()">
+                    <p class="text-xs text-gray-400 mt-1">支援 Excel 匯出的 CSV 格式</p>
+                </div>
+
+                <!-- 評量名稱 (自動帶入或手動) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">評量名稱 (將作為工作表名稱)</label>
+                    <input type="text" id="targetSheetName" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如: 113五下第一次評量">
+                </div>
+                
+                <!-- 編碼選擇 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">檔案編碼</label>
+                    <select id="fileEncoding" class="w-full border rounded-lg p-2 bg-white">
+                        <option value="Big5">Big5 (Excel 預設繁體中文)</option>
+                        <option value="UTF-8">UTF-8 (Google 試算表/標準格式)</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">若匯入後出現亂碼，請切換此選項重試。</p>
+                </div>
+
+                <!-- 按鈕 -->
+                <button onclick="uploadCSV()" id="uploadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex justify-center items-center">
+                    <i class="fa-solid fa-upload mr-2"></i> 開始匯入
+                </button>
+
+                <div id="uploadStatus" class="text-center text-sm min-h-[20px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理員入口按鈕 (右下角) -->
+    <button onclick="toggleAdmin(true)" class="fixed bottom-4 right-4 bg-gray-200 hover:bg-gray-300 text-gray-600 p-3 rounded-full shadow-lg transition opacity-50 hover:opacity-100 z-40" title="管理員登入">
+        <i class="fa-solid fa-cog"></i>
+    </button>
+
+    <script>
+        // ************************************************
+        // 請輸入您最新的 GAS 網址
+        // ************************************************
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXXXXX/exec"; 
+
+        // 全域變數
+        let sheetList = [];
+        let currentUserId = "";
+        const SUBJECT_MAP = { 'chi': '國語', 'eng': '英語', 'math': '數學', 'soc': '社會', 'sci': '自然' };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initSystem();
+        });
+
+        // --- 管理員功能 ---
+
+        function toggleAdmin(show) {
+            const panel = document.getElementById('adminPanel');
+            if (show) panel.classList.remove('hidden');
+            else panel.classList.add('hidden');
+        }
+
+        function previewFileName() {
+            const fileInput = document.getElementById('csvFile');
+            const nameInput = document.getElementById('targetSheetName');
+            if (fileInput.files.length > 0) {
+                // 嘗試從檔名自動填入工作表名稱 (去除 .csv)
+                let name = fileInput.files[0].name.replace('.csv', '');
+                // 您的檔名格式類似 "114五班... - 114六上第二次評量"，嘗試只取後面
+                if (name.includes('-')) {
+                    name = name.split('-').pop().trim();
+                }
+                nameInput.value = name;
+            }
+        }
+
+        async function uploadCSV() {
+            const pwd = document.getElementById('adminPwd').value;
+            const fileInput = document.getElementById('csvFile');
+            const sheetName = document.getElementById('targetSheetName').value;
+            const encoding = document.getElementById('fileEncoding').value;
+            const btn = document.getElementById('uploadBtn');
+            const status = document.getElementById('uploadStatus');
+
+            if (!pwd) return alert("請輸入管理員密碼");
+            if (fileInput.files.length === 0) return alert("請選擇檔案");
+            if (!sheetName) return alert("請輸入評量名稱");
+
+            const file = fileInput.files[0];
+            
+            // UI Loading
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loader mr-2 w-4 h-4 border-t-white"></div> 上傳處理中...';
+            status.innerHTML = `<span class="text-blue-600">正在讀取檔案...</span>`;
+
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                const csvContent = e.target.result;
+                status.innerHTML = `<span class="text-blue-600">正在傳送資料到 Google 試算表...</span>`;
+
+                try {
+                    // 使用 POST 發送大量資料
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            op: 'import_csv',
+                            password: pwd,
+                            sheetName: sheetName,
+                            csvContent: csvContent
+                        })
+                    });
+                    
+                    const result = await response.json();
+
+                    if (result.success) {
+                        status.innerHTML = `<span class="text-green-600 font-bold"><i class="fa-solid fa-check-circle"></i> ${result.message}</span>`;
+                        alert("匯入成功！");
+                        toggleAdmin(false);
+                        // 重新整理頁面以獲取新清單
+                        window.location.reload();
+                    } else {
+                        status.innerHTML = `<span class="text-red-600 font-bold">錯誤: ${result.error}</span>`;
+                    }
+                } catch (err) {
+                    status.innerHTML = `<span class="text-red-600">連線錯誤: ${err.message}</span>`;
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-upload mr-2"></i> 開始匯入';
+                }
+            };
+
+            // 處理編碼 (Excel CSV 常用 Big5，Google 常用 UTF-8)
+            reader.readAsText(file, encoding);
+        }
+
+        // --- 既有學生功能 (保持不變) ---
+        async function initSystem() {
+            if (SCRIPT_URL.includes("XXXXXXXXXXXX")) return showMsg("error", "請設定 SCRIPT_URL");
+            try {
+                const data = await safeFetch(`${SCRIPT_URL}?op=get_sheets`);
+                if (data.sheets) {
+                    sheetList = data.sheets;
+                    renderSheetOptions();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function handleLogin() {
+            const val = document.getElementById('loginIdInput').value.trim();
+            if (val.length !== 5) return showMsg("error", "請輸入5碼");
+            
+            const btn = document.getElementById('loginBtn');
+            btn.innerHTML = '驗證中...'; btn.disabled = true;
+            
+            try {
+                const data = await safeFetch(`${SCRIPT_URL}?op=login&id_last5=${val}`);
+                if (data.success) {
+                    currentUserId = val;
+                    document.getElementById('userDisplayName').textContent = data.name;
+                    document.getElementById('loginPanel').classList.add('hidden');
+                    document.getElementById('dashboardPanel').classList.remove('hidden');
+                    showMsg("","");
+                } else { showMsg("error", data.error || "驗證失敗"); }
+            } catch (e) { showMsg("error", "連線失敗"); }
+            finally { btn.innerHTML = '登入系統'; btn.disabled = false; }
+        }
+
+        function logout() {
+            currentUserId = "";
+            document.getElementById('dashboardPanel').classList.add('hidden');
+            document.getElementById('loginPanel').classList.remove('hidden');
+            document.getElementById('loginIdInput').value = "";
+            document.getElementById('resultArea').classList.add('hidden');
+        }
+
+        async function handleExamChange() {
+            const sheet = document.getElementById('examSelect').value;
+            if (!sheet) return;
+            document.getElementById('resultArea').classList.remove('hidden');
+            document.getElementById('resultLoader').classList.remove('hidden');
+            document.getElementById('resultContent').classList.add('hidden');
+
+            try {
+                const data = await safeFetch(`${SCRIPT_URL}?op=query&sheet_name=${encodeURIComponent(sheet)}&id_last5=${encodeURIComponent(currentUserId)}`);
+                document.getElementById('resultLoader').classList.add('hidden');
+                if (data.success) {
+                    renderResult(data);
+                    document.getElementById('resultContent').classList.remove('hidden');
+                } else { alert(data.error); }
+            } catch (e) { alert("查詢錯誤"); }
+        }
+
+        function renderResult(data) {
+            const s = data.student; const stats = data.stats;
+            document.getElementById('resSeat').textContent = s.seat;
+            document.getElementById('resName').textContent = s.name;
+            document.getElementById('resAvg').textContent = s.avg;
+            document.getElementById('resTotal').textContent = s.total;
+
+            const tbody = document.getElementById('scoreTableBody'); tbody.innerHTML = '';
+            Object.keys(SUBJECT_MAP).forEach(key => {
+                const sub = s.subjects[key];
+                tbody.innerHTML += `<tr class="border-b last:border-0 hover:bg-gray-50"><td class="px-6 py-4 font-medium">${SUBJECT_MAP[key]}</td><td class="px-6 py-4 text-center font-bold">${sub.reg}</td><td class="px-6 py-4 text-center text-gray-500">${sub.daily}</td></tr>`;
+            });
+
+            const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
+            Object.keys(SUBJECT_MAP).forEach(key => {
+                const st = stats[key]; const total = st.totalCount;
+                let bars = '';
+                const ranges = [{k:'100',l:'100',c:'bg-purple-500'},{k:'90-99',l:'90-99',c:'bg-blue-500'},{k:'80-89',l:'80-89',c:'bg-green-500'},{k:'70-79',l:'70-79',c:'bg-yellow-500'},{k:'60-69',l:'60-69',c:'bg-orange-500'},{k:'under60',l:'<60',c:'bg-red-500'}];
+                ranges.forEach(r => {
+                    const c = st.distribution[r.k]; const pct = total?(c/total)*100:0;
+                    bars += `<div class="flex items-center text-xs mb-1"><span class="w-10 text-right mr-2">${r.l}</span><div class="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden"><div class="h-full ${r.c}" style="width:${pct}%"></div></div><span class="w-6 text-right font-bold text-gray-600">${c||''}</span></div>`;
+                });
+                grid.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100"><div class="flex justify-between border-b pb-2 mb-2"><h5 class="font-bold">${SUBJECT_MAP[key]}</h5><span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">定期</span></div>${bars}<div class="flex justify-between mt-2 text-center text-xs bg-gray-50 p-2 rounded"><div><div class="text-gray-400">平均</div><div class="font-bold text-blue-600 text-base">${st.avg}</div></div><div><div class="text-gray-400">高標</div><div class="font-bold text-green-600 text-base">${st.highStd}</div></div></div></div>`;
+            });
+        }
+
+        function renderSheetOptions() {
+            const sel = document.getElementById('examSelect');
+            sel.innerHTML = '<option value="" disabled selected>▼ 請選擇評量成績...</option>';
+            sheetList.forEach(n => sel.innerHTML += `<option value="${n}">${n}</option>`);
+        }
+
+        async function safeFetch(url, opts) {
+            const res = await fetch(url, opts);
+            const txt = await res.text();
+            try { return JSON.parse(txt); } catch(e) { 
+                if(txt.includes("Google Drive")) throw new Error("權限不足");
+                throw new Error("格式錯誤"); 
+            }
+        }
+
+        function showMsg(type, text) {
+            const el = document.getElementById('systemMsg');
+            if(!text) return el.classList.add('hidden');
+            el.className = `w-full max-w-md mb-4 px-4 py-3 rounded text-center ${type==='error'?'bg-red-100 text-red-700':'bg-green-100 text-green-700'}`;
+            el.textContent = text; el.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
