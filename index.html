@@ -71,81 +71,90 @@
         <div id="resultArea" class="hidden animate-fade-in-up">
             <div id="resultLoader" class="hidden py-12 text-center"><div class="loader inline-block border-t-blue-600 w-10 h-10 mb-4"></div><p>讀取中...</p></div>
             <div id="resultContent" class="hidden">
+                <!-- 個人資料卡 -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">座號</div><div class="text-2xl font-bold text-gray-800" id="resSeat">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">姓名</div><div class="text-2xl font-bold text-gray-800" id="resName">--</div></div>
-                    <!-- 修改這裡：將「平均」改為「備註」 -->
+                    <!-- 備註欄位 -->
                     <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white">
-                        <div class="text-xs text-blue-100">備註</div>
+                        <div class="text-xs text-blue-100">備註 (名次)</div>
                         <div class="text-3xl font-bold" id="resNote">--</div>
                     </div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">總分</div><div class="text-2xl font-bold text-gray-700" id="resTotal">--</div></div>
                 </div>
+
+                <!-- 成績表格 (動態生成) -->
                 <div class="bg-white rounded-xl shadow overflow-hidden mb-8 border border-gray-100">
                     <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left"><thead class="text-xs text-gray-500 uppercase bg-gray-50"><tr><th class="px-6 py-3">科目</th><th class="px-6 py-3 text-center">定期</th><th class="px-6 py-3 text-center">平時</th></tr></thead><tbody id="scoreTableBody"></tbody></table>
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3">科目</th>
+                                    <th class="px-6 py-3 text-center">定期</th>
+                                    <th class="px-6 py-3 text-center">平時</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scoreTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
+
+                <!-- 統計圖表 (動態生成) -->
                 <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12"></div>
             </div>
         </div>
     </div>
 
-    <!-- 3. 管理員匯入面板 -->
+    <!-- 管理員匯入面板 -->
     <div id="adminPanel" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex justify-center items-center backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fade-in-up">
             <button onclick="toggleAdmin(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
-            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-upload-alt text-blue-600 mr-2"></i>匯入成績資料 (CSV)</h2>
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-upload-alt text-blue-600 mr-2"></i>匯入成績 (CSV)</h2>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">管理員密碼</label>
-                    <input type="password" id="adminPwd" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="請輸入 Code.gs 設定的密碼">
+                    <input type="password" id="adminPwd" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">選擇 CSV 檔案</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">選擇檔案</label>
                     <input type="file" id="csvFile" accept=".csv" class="w-full text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 focus:outline-none" onchange="previewFileName()">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">評量名稱 (將作為工作表名稱)</label>
-                    <input type="text" id="targetSheetName" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如: 113五下第一次評量">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">評量名稱</label>
+                    <input type="text" id="targetSheetName" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">檔案編碼</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">編碼</label>
                     <select id="fileEncoding" class="w-full border rounded-lg p-2 bg-white">
-                        <option value="Big5">Big5 (Excel 預設)</option>
-                        <option value="UTF-8">UTF-8 (Google 格式)</option>
+                        <option value="Big5">Big5</option>
+                        <option value="UTF-8">UTF-8</option>
                     </select>
                 </div>
-                <button onclick="uploadCSV()" id="uploadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex justify-center items-center">
-                    <i class="fa-solid fa-upload mr-2"></i> 開始匯入
+                <button onclick="uploadCSV()" id="uploadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    匯入
                 </button>
-                <div id="uploadStatus" class="text-center text-sm min-h-[20px]"></div>
+                <div id="uploadStatus" class="text-center text-sm"></div>
             </div>
         </div>
     </div>
 
     <button onclick="toggleAdmin(true)" class="fixed bottom-4 right-4 bg-gray-800 hover:bg-gray-700 text-white px-5 py-3 rounded-full shadow-lg transition z-40 flex items-center space-x-2 border-2 border-white/20">
-        <i class="fa-solid fa-cog animate-spin-slow"></i>
-        <span class="font-bold">管理員/教師匯入</span>
+        <i class="fa-solid fa-cog"></i><span class="font-bold">管理員</span>
     </button>
 
     <script>
         // ************************************************
-        // 請輸入您最新的 GAS 網址
+        // 請修改為您的最新 GAS 網址
         // ************************************************
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz3VPFczXNMCaudJTMNdyyMgfDD3PKSmJhv9xUfTym05RgGiA7Munj7wONXFMBBD0NsMw/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw5Ttejb_fZNKSy0uhDa4oe7PGSN6rPIZUhl-I4k5iEeIteB12bkHbTs4AQMhOKN4kATQ/exec"; 
 
-        // 全域變數
         let sheetList = [];
         let currentUserId = "";
-        const SUBJECT_MAP = { 'chi': '國語', 'eng': '英語', 'math': '數學', 'soc': '社會', 'sci': '自然' };
 
         document.addEventListener('DOMContentLoaded', () => initSystem());
 
         function toggleAdmin(show) {
-            const panel = document.getElementById('adminPanel');
-            if (show) panel.classList.remove('hidden');
-            else panel.classList.add('hidden');
+            document.getElementById('adminPanel').classList.toggle('hidden', !show);
         }
 
         function previewFileName() {
@@ -166,18 +175,14 @@
             const btn = document.getElementById('uploadBtn');
             const status = document.getElementById('uploadStatus');
 
-            if (!pwd) return alert("請輸入密碼");
-            if (fileInput.files.length === 0) return alert("請選擇檔案");
-            if (!sheetName) return alert("請輸入名稱");
+            if (!pwd || fileInput.files.length === 0 || !sheetName) return alert("請填寫完整資訊");
 
             const file = fileInput.files[0];
             btn.disabled = true; btn.innerHTML = '處理中...';
-            status.innerHTML = `<span class="text-blue-600">讀取中...</span>`;
+            status.innerHTML = `<span class="text-blue-600">上傳中...</span>`;
 
             const reader = new FileReader();
             reader.onload = async function(e) {
-                const csvContent = e.target.result;
-                status.innerHTML = `<span class="text-blue-600">上傳中...</span>`;
                 try {
                     const response = await fetch(SCRIPT_URL, {
                         method: 'POST',
@@ -185,7 +190,7 @@
                             op: 'import_csv',
                             password: pwd,
                             sheetName: sheetName,
-                            csvContent: csvContent
+                            csvContent: e.target.result
                         })
                     });
                     const result = await response.json();
@@ -198,7 +203,7 @@
                 } catch (err) {
                     status.innerHTML = `<span class="text-red-600">連線錯誤</span>`;
                 } finally {
-                    btn.disabled = false; btn.innerHTML = '開始匯入';
+                    btn.disabled = false; btn.innerHTML = '匯入';
                 }
             };
             reader.readAsText(file, encoding);
@@ -257,30 +262,78 @@
             } catch (e) { alert("查詢錯誤"); }
         }
 
+        // --- 核心：動態渲染 ---
         function renderResult(data) {
-            const s = data.student; const stats = data.stats;
+            const s = data.student;
+            const stats = data.stats;
+
             document.getElementById('resSeat').textContent = s.seat;
             document.getElementById('resName').textContent = s.name;
-            // 更新：顯示備註
-            document.getElementById('resNote').textContent = s.note || '--';
+            document.getElementById('resNote').textContent = s.note || '--'; // 備註
             document.getElementById('resTotal').textContent = s.total;
 
-            const tbody = document.getElementById('scoreTableBody'); tbody.innerHTML = '';
-            Object.keys(SUBJECT_MAP).forEach(key => {
-                const sub = s.subjects[key];
-                tbody.innerHTML += `<tr class="border-b last:border-0 hover:bg-gray-50"><td class="px-6 py-4 font-medium">${SUBJECT_MAP[key]}</td><td class="px-6 py-4 text-center font-bold">${sub.reg}</td><td class="px-6 py-4 text-center text-gray-500">${sub.daily}</td></tr>`;
-            });
+            const tbody = document.getElementById('scoreTableBody');
+            tbody.innerHTML = '';
+            const grid = document.getElementById('statsGrid');
+            grid.innerHTML = '';
 
-            const grid = document.getElementById('statsGrid'); grid.innerHTML = '';
-            Object.keys(SUBJECT_MAP).forEach(key => {
-                const st = stats[key]; const total = st.totalCount;
-                let bars = '';
-                const ranges = [{k:'100',l:'100',c:'bg-purple-500'},{k:'90-99',l:'90-99',c:'bg-blue-500'},{k:'80-89',l:'80-89',c:'bg-green-500'},{k:'70-79',l:'70-79',c:'bg-yellow-500'},{k:'60-69',l:'60-69',c:'bg-orange-500'},{k:'under60',l:'<60',c:'bg-red-500'}];
-                ranges.forEach(r => {
-                    const c = st.distribution[r.k]; const pct = total?(c/total)*100:0;
-                    bars += `<div class="flex items-center text-xs mb-1"><span class="w-10 text-right mr-2">${r.l}</span><div class="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden"><div class="h-full ${r.c}" style="width:${pct}%"></div></div><span class="w-6 text-right font-bold text-gray-600">${c||''}</span></div>`;
-                });
-                grid.innerHTML += `<div class="bg-white p-4 rounded-xl shadow border border-gray-100"><div class="flex justify-between border-b pb-2 mb-2"><h5 class="font-bold">${SUBJECT_MAP[key]}</h5><span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">定期</span></div>${bars}<div class="flex justify-between mt-2 text-center text-xs bg-gray-50 p-2 rounded"><div><div class="text-gray-400">平均</div><div class="font-bold text-blue-600 text-base">${st.avg}</div></div><div><div class="text-gray-400">高標</div><div class="font-bold text-green-600 text-base">${st.highStd}</div></div></div></div>`;
+            // 依照後端回傳的科目順序產生內容
+            const subjectList = s.subjects; // 這是陣列
+
+            subjectList.forEach(sub => {
+                const name = sub.name;
+                const regScore = sub.reg;
+                const dailyScore = sub.daily;
+                const st = stats[name]; // 取得該科統計
+
+                // 1. 表格列
+                tbody.innerHTML += `
+                    <tr class="border-b last:border-0 hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium">${name}</td>
+                        <td class="px-6 py-4 text-center font-bold">${regScore}</td>
+                        <td class="px-6 py-4 text-center text-gray-500">${dailyScore}</td>
+                    </tr>
+                `;
+
+                // 2. 統計圖表 (只顯示定期成績相關)
+                if (st && st.totalCount > 0) {
+                    const total = st.totalCount;
+                    let bars = '';
+                    const ranges = [
+                        {k:'100',l:'100',c:'bg-purple-500'},
+                        {k:'90-99',l:'90-99',c:'bg-blue-500'},
+                        {k:'80-89',l:'80-89',c:'bg-green-500'},
+                        {k:'70-79',l:'70-79',c:'bg-yellow-500'},
+                        {k:'60-69',l:'60-69',c:'bg-orange-500'},
+                        {k:'under60',l:'<60',c:'bg-red-500'}
+                    ];
+                    
+                    ranges.forEach(r => {
+                        const count = st.distribution[r.k] || 0;
+                        const pct = total ? (count/total)*100 : 0;
+                        bars += `
+                            <div class="flex items-center text-xs mb-1">
+                                <span class="w-10 text-right mr-2">${r.l}</span>
+                                <div class="flex-1 bg-gray-100 h-2 rounded-full overflow-hidden">
+                                    <div class="h-full ${r.c}" style="width:${pct}%"></div>
+                                </div>
+                                <span class="w-6 text-right font-bold text-gray-600">${count||''}</span>
+                            </div>`;
+                    });
+
+                    grid.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl shadow border border-gray-100">
+                            <div class="flex justify-between border-b pb-2 mb-2">
+                                <h5 class="font-bold">${name}</h5>
+                                <span class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">定期</span>
+                            </div>
+                            ${bars}
+                            <div class="flex justify-between mt-2 text-center text-xs bg-gray-50 p-2 rounded">
+                                <div><div class="text-gray-400">平均</div><div class="font-bold text-blue-600 text-base">${st.avg}</div></div>
+                                <div><div class="text-gray-400">高標</div><div class="font-bold text-green-600 text-base">${st.highStd}</div></div>
+                            </div>
+                        </div>`;
+                }
             });
         }
 
