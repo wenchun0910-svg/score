@@ -71,19 +71,13 @@
         <div id="resultArea" class="hidden animate-fade-in-up">
             <div id="resultLoader" class="hidden py-12 text-center"><div class="loader inline-block border-t-blue-600 w-10 h-10 mb-4"></div><p>讀取中...</p></div>
             <div id="resultContent" class="hidden">
-                <!-- 個人資料卡 -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">座號</div><div class="text-2xl font-bold text-gray-800" id="resSeat">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">姓名</div><div class="text-2xl font-bold text-gray-800" id="resName">--</div></div>
-                    <!-- 備註欄位 -->
-                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white">
-                        <div class="text-xs text-blue-100">備註</div>
-                        <div class="text-3xl font-bold" id="resNote">--</div>
-                    </div>
+                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white"><div class="text-xs text-blue-100">備註 (名次)</div><div class="text-3xl font-bold" id="resNote">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">總分</div><div class="text-2xl font-bold text-gray-700" id="resTotal">--</div></div>
                 </div>
 
-                <!-- 成績表格 (動態生成) -->
                 <div class="bg-white rounded-xl shadow overflow-hidden mb-8 border border-gray-100">
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left">
@@ -98,42 +92,69 @@
                         </table>
                     </div>
                 </div>
-
-                <!-- 統計圖表 (動態生成) -->
                 <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12"></div>
             </div>
         </div>
     </div>
 
-    <!-- 管理員匯入面板 -->
+    <!-- 3. 管理員面板 (匯入 + 刪除) -->
     <div id="adminPanel" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex justify-center items-center backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fade-in-up">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fade-in-up max-h-[90vh] overflow-y-auto">
             <button onclick="toggleAdmin(false)" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times text-xl"></i></button>
-            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-cloud-upload-alt text-blue-600 mr-2"></i>匯入成績 (CSV)</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">管理員密碼</label>
-                    <input type="password" id="adminPwd" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2"><i class="fa-solid fa-user-cog text-blue-600 mr-2"></i>管理員面板</h2>
+            
+            <div class="space-y-6">
+                <!-- 共用密碼區 -->
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <label class="block text-sm font-bold text-blue-800 mb-1">管理員密碼</label>
+                    <input type="password" id="adminPwd" class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none bg-white" placeholder="請輸入 Code.gs 設定的密碼">
                 </div>
+
+                <!-- 匯入功能 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">選擇檔案</label>
-                    <input type="file" id="csvFile" accept=".csv" class="w-full text-sm text-gray-500 border rounded-lg cursor-pointer bg-gray-50 focus:outline-none" onchange="previewFileName()">
+                    <h3 class="text-md font-bold text-gray-700 mb-2 border-l-4 border-green-500 pl-2">匯入成績 (CSV)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">選擇檔案</label>
+                            <input type="file" id="csvFile" accept=".csv" class="w-full text-sm border rounded cursor-pointer bg-gray-50" onchange="previewFileName()">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">評量名稱</label>
+                            <input type="text" id="targetSheetName" class="w-full border rounded p-2 text-sm" placeholder="例如: 114上第一次評量">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">編碼</label>
+                            <select id="fileEncoding" class="w-full border rounded p-2 bg-white text-sm">
+                                <option value="Big5">Big5 (Excel 預設)</option>
+                                <option value="UTF-8">UTF-8</option>
+                            </select>
+                        </div>
+                        <button onclick="uploadCSV()" id="uploadBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded transition text-sm">
+                            <i class="fa-solid fa-file-import mr-1"></i> 開始匯入
+                        </button>
+                    </div>
                 </div>
+
+                <hr class="border-gray-200">
+
+                <!-- 刪除功能 -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">評量名稱</label>
-                    <input type="text" id="targetSheetName" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <h3 class="text-md font-bold text-gray-700 mb-2 border-l-4 border-red-500 pl-2">刪除評量 (工作表)</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm text-gray-600 mb-1">選擇要刪除的評量</label>
+                            <select id="deleteSheetSelect" class="w-full border rounded p-2 bg-white text-sm">
+                                <option value="" disabled selected>▼ 請選擇...</option>
+                            </select>
+                            <p class="text-xs text-red-400 mt-1">* 刪除後無法復原</p>
+                        </div>
+                        <button onclick="deleteSheet()" id="deleteBtn" class="w-full bg-white border border-red-500 text-red-500 hover:bg-red-50 font-bold py-2 rounded transition text-sm">
+                            <i class="fa-solid fa-trash-alt mr-1"></i> 刪除工作表
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">編碼</label>
-                    <select id="fileEncoding" class="w-full border rounded-lg p-2 bg-white">
-                        <option value="Big5">Big5</option>
-                        <option value="UTF-8">UTF-8</option>
-                    </select>
-                </div>
-                <button onclick="uploadCSV()" id="uploadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
-                    匯入
-                </button>
-                <div id="uploadStatus" class="text-center text-sm"></div>
+
+                <div id="adminStatus" class="text-center text-sm min-h-[20px]"></div>
             </div>
         </div>
     </div>
@@ -146,7 +167,7 @@
         // ************************************************
         // 請修改為您的最新 GAS 網址
         // ************************************************
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw5Ttejb_fZNKSy0uhDa4oe7PGSN6rPIZUhl-I4k5iEeIteB12bkHbTs4AQMhOKN4kATQ/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXXXXX/exec"; 
 
         let sheetList = [];
         let currentUserId = "";
@@ -154,7 +175,21 @@
         document.addEventListener('DOMContentLoaded', () => initSystem());
 
         function toggleAdmin(show) {
-            document.getElementById('adminPanel').classList.toggle('hidden', !show);
+            const panel = document.getElementById('adminPanel');
+            if (show) {
+                panel.classList.remove('hidden');
+                // 每次打開管理面板，自動更新刪除清單
+                const delSel = document.getElementById('deleteSheetSelect');
+                delSel.innerHTML = '<option value="" disabled selected>▼ 請選擇...</option>';
+                sheetList.forEach(n => {
+                    const opt = document.createElement('option');
+                    opt.value = n;
+                    opt.textContent = n;
+                    delSel.appendChild(opt);
+                });
+            } else {
+                panel.classList.add('hidden');
+            }
         }
 
         function previewFileName() {
@@ -167,17 +202,18 @@
             }
         }
 
+        // 匯入功能
         async function uploadCSV() {
             const pwd = document.getElementById('adminPwd').value;
             const fileInput = document.getElementById('csvFile');
             const sheetName = document.getElementById('targetSheetName').value;
             const encoding = document.getElementById('fileEncoding').value;
             const btn = document.getElementById('uploadBtn');
-            const status = document.getElementById('uploadStatus');
+            const status = document.getElementById('adminStatus');
 
-            if (!pwd || fileInput.files.length === 0 || !sheetName) return alert("請填寫完整資訊");
+            if (!pwd) return alert("請輸入管理員密碼");
+            if (fileInput.files.length === 0 || !sheetName) return alert("請填寫匯入資訊");
 
-            const file = fileInput.files[0];
             btn.disabled = true; btn.innerHTML = '處理中...';
             status.innerHTML = `<span class="text-blue-600">上傳中...</span>`;
 
@@ -203,10 +239,48 @@
                 } catch (err) {
                     status.innerHTML = `<span class="text-red-600">連線錯誤</span>`;
                 } finally {
-                    btn.disabled = false; btn.innerHTML = '匯入';
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-file-import mr-1"></i> 開始匯入';
                 }
             };
-            reader.readAsText(file, encoding);
+            reader.readAsText(fileInput.files[0], encoding);
+        }
+
+        // 刪除功能
+        async function deleteSheet() {
+            const pwd = document.getElementById('adminPwd').value;
+            const sheetName = document.getElementById('deleteSheetSelect').value;
+            const btn = document.getElementById('deleteBtn');
+            const status = document.getElementById('adminStatus');
+
+            if (!pwd) return alert("請輸入管理員密碼");
+            if (!sheetName) return alert("請選擇要刪除的工作表");
+            
+            if (!confirm(`警告：您確定要永久刪除「${sheetName}」嗎？\n\n此動作無法復原！`)) return;
+
+            btn.disabled = true; btn.innerHTML = '刪除中...';
+            status.innerHTML = `<span class="text-red-600">刪除請求處理中...</span>`;
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        op: 'delete_sheet',
+                        password: pwd,
+                        sheetName: sheetName
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert(`成功：${result.message}`);
+                    window.location.reload(); // 重新整理以更新清單
+                } else {
+                    status.innerHTML = `<span class="text-red-600">錯誤: ${result.error}</span>`;
+                    btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-trash-alt mr-1"></i> 刪除工作表';
+                }
+            } catch (err) {
+                status.innerHTML = `<span class="text-red-600">連線錯誤</span>`;
+                btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-trash-alt mr-1"></i> 刪除工作表';
+            }
         }
 
         async function initSystem() {
@@ -262,14 +336,13 @@
             } catch (e) { alert("查詢錯誤"); }
         }
 
-        // --- 核心：動態渲染 ---
         function renderResult(data) {
             const s = data.student;
             const stats = data.stats;
 
             document.getElementById('resSeat').textContent = s.seat;
             document.getElementById('resName').textContent = s.name;
-            document.getElementById('resNote').textContent = s.note || '--'; // 備註
+            document.getElementById('resNote').textContent = s.note || '--';
             document.getElementById('resTotal').textContent = s.total;
 
             const tbody = document.getElementById('scoreTableBody');
@@ -277,16 +350,14 @@
             const grid = document.getElementById('statsGrid');
             grid.innerHTML = '';
 
-            // 依照後端回傳的科目順序產生內容
-            const subjectList = s.subjects; // 這是陣列
+            const subjectList = s.subjects; 
 
             subjectList.forEach(sub => {
                 const name = sub.name;
                 const regScore = sub.reg;
                 const dailyScore = sub.daily;
-                const st = stats[name]; // 取得該科統計
+                const st = stats[name];
 
-                // 1. 表格列
                 tbody.innerHTML += `
                     <tr class="border-b last:border-0 hover:bg-gray-50">
                         <td class="px-6 py-4 font-medium">${name}</td>
@@ -295,7 +366,6 @@
                     </tr>
                 `;
 
-                // 2. 統計圖表 (只顯示定期成績相關)
                 if (st && st.totalCount > 0) {
                     const total = st.totalCount;
                     let bars = '';
