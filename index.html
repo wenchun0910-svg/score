@@ -74,7 +74,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">座號</div><div class="text-2xl font-bold text-gray-800" id="resSeat">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">姓名</div><div class="text-2xl font-bold text-gray-800" id="resName">--</div></div>
-                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white"><div class="text-xs text-blue-100">備註</div><div class="text-3xl font-bold" id="resNote">--</div></div>
+                    <div class="bg-blue-600 p-4 rounded-xl shadow-md text-center text-white"><div class="text-xs text-blue-100">備註 (名次)</div><div class="text-3xl font-bold" id="resNote">--</div></div>
                     <div class="bg-white p-4 rounded-xl shadow-sm text-center"><div class="text-xs text-gray-400">總分</div><div class="text-2xl font-bold text-gray-700" id="resTotal">--</div></div>
                 </div>
 
@@ -167,26 +167,47 @@
         // ************************************************
         // 請修改為您的最新 GAS 網址
         // ************************************************
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWG-rOlgEWGgCxUEXNuH1H0NsQT6VN94gqWQP-1mcEfRexEPjqtBuJCCcTuoUY3qxfMg/exec"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXXXXX/exec"; 
 
         let sheetList = [];
         let currentUserId = "";
 
         document.addEventListener('DOMContentLoaded', () => initSystem());
 
-        function toggleAdmin(show) {
+        // 更新重點：每次打開管理面板時，強制重新抓取最新的工作表清單
+        async function toggleAdmin(show) {
             const panel = document.getElementById('adminPanel');
             if (show) {
                 panel.classList.remove('hidden');
-                // 每次打開管理面板，自動更新刪除清單
                 const delSel = document.getElementById('deleteSheetSelect');
-                delSel.innerHTML = '<option value="" disabled selected>▼ 請選擇...</option>';
-                sheetList.forEach(n => {
-                    const opt = document.createElement('option');
-                    opt.value = n;
-                    opt.textContent = n;
-                    delSel.appendChild(opt);
-                });
+                
+                // 1. 先顯示載入中
+                delSel.innerHTML = '<option>讀取清單中...</option>';
+                delSel.disabled = true;
+
+                try {
+                    // 2. 重新向後端請求最新的工作表清單
+                    const data = await safeFetch(`${SCRIPT_URL}?op=get_sheets`);
+                    if (data.sheets) {
+                        sheetList = data.sheets; // 更新全域變數
+                        
+                        // 3. 填入下拉選單
+                        delSel.innerHTML = '<option value="" disabled selected>▼ 請選擇要刪除的評量...</option>';
+                        sheetList.forEach(n => {
+                            const opt = document.createElement('option');
+                            opt.value = n;
+                            opt.textContent = n;
+                            delSel.appendChild(opt);
+                        });
+                        delSel.disabled = false;
+
+                        // 同步更新主畫面的選單 (若使用者已登入)
+                        renderSheetOptions();
+                    }
+                } catch (e) {
+                    console.error("更新清單失敗", e);
+                    delSel.innerHTML = '<option>讀取失敗，請重開</option>';
+                }
             } else {
                 panel.classList.add('hidden');
             }
